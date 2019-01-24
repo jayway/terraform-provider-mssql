@@ -4,7 +4,7 @@ import (
 	"context"
 	"database/sql"
 
-	// import mssql driver
+	// import sqlserver driver
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
@@ -18,11 +18,10 @@ type Connector struct {
 func (c Connector) Execute(command string, args ...interface{}) error {
 	ctx := context.Background()
 	conn, err := sql.Open("sqlserver", c.ConnectionString)
-	defer conn.Close()
-
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	_, err = conn.ExecContext(ctx, command, args...)
 	if err != nil {
@@ -40,13 +39,7 @@ func (c Connector) Query(query string, scanner func(*sql.Rows) error, args ...in
 	}
 	defer conn.Close()
 
-	stmt, err := conn.PrepareContext(ctx, query)
-	if err != nil {
-		return err
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.QueryContext(ctx, args...)
+	rows, err := conn.QueryContext(ctx, query, args...)
 	if err != nil {
 		return err
 	}

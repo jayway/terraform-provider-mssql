@@ -20,6 +20,7 @@ func Login() *schema.Resource {
 			usernameProp: &schema.Schema{
 				Type:     schema.TypeString,
 				Required: true,
+				ForceNew: true,
 			},
 			passwordProp: &schema.Schema{
 				Type:      schema.TypeString,
@@ -44,12 +45,38 @@ func loginCreate(d *schema.ResourceData, meta interface{}) error {
 
 	return loginRead(d, meta)
 }
+
 func loginRead(d *schema.ResourceData, meta interface{}) error {
+	connector := meta.(sql.Connector)
+	username := d.Id()
+
+	login, err := connector.GetLogin(username)
+	if err != nil {
+		return err
+	}
+	if login == nil {
+		d.SetId("")
+	}
+
 	return nil
 }
+
 func loginUpdate(d *schema.ResourceData, meta interface{}) error {
+	connector := meta.(sql.Connector)
+	username := d.Get(usernameProp).(string)
+	password := d.Get(passwordProp).(string)
+
+	err := connector.UpdateLogin(username, password)
+	if err != nil {
+		return err
+	}
+
 	return loginRead(d, meta)
 }
+
 func loginDelete(d *schema.ResourceData, meta interface{}) error {
-	return nil
+	connector := meta.(sql.Connector)
+	username := d.Id()
+
+	return connector.DeleteLogin(username)
 }
