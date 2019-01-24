@@ -2,7 +2,9 @@ provider "mssql" {
   connection_string = "Data Source=localhost:1433;user id=sa;password=$up3R$3cR37"
 }
 
-provider "random" {}
+provider "random" {
+  version = "~> 2.0"
+}
 
 resource "random_string" "pwd" {
   keepers = {
