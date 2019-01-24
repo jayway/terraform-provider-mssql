@@ -1,2 +1,4 @@
 *.exe
 terraform-provider-mssql
+.terraform
+*.tfstate*
