@@ -21,6 +21,10 @@ func (c Connector) DeleteLogin(username string) error {
 					SET @sql = 'IF EXISTS (SELECT 1 FROM [master].[sys].[server_principals] WHERE [name] = ' + QuoteName(@username, '''') + ') ' +
 										 'DROP LOGIN ' + QuoteName(@username);
 					EXEC (@sql)`
+	err := c.killSessionsForLogin(username)
+	if err != nil {
+		return err
+	}
 	return c.Execute(cmd, sql.Named("username", username))
 }
 
@@ -67,4 +71,33 @@ func (c Connector) UpdateLogin(username string, password string) error {
 					EXEC (@sql)`
 
 	return c.Execute(cmd, sql.Named("username", username), sql.Named("password", password))
+}
+
+func (c Connector) killSessionsForLogin(username string) error {
+	cmd := ` -- adapted from https://stackoverflow.com/a/5178097/38055
+	DECLARE sessionsToKill CURSOR FAST_FORWARD FOR
+			SELECT session_id
+			FROM sys.dm_exec_sessions
+			WHERE login_name = @username
+	OPEN sessionsToKill
+
+	DECLARE @sessionId INT
+	DECLARE @statement NVARCHAR(200)
+
+	FETCH NEXT FROM sessionsToKill INTO @sessionId
+
+	WHILE @@FETCH_STATUS = 0
+	BEGIN
+			PRINT 'Killing session ' + CAST(@sessionId AS NVARCHAR(20)) + ' for login ' + @username
+
+			SET @statement = 'KILL ' + CAST(@sessionId AS NVARCHAR(20))
+			EXEC sp_executesql @statement
+
+			FETCH NEXT FROM sessionsToKill INTO @sessionId
+	END
+
+	CLOSE sessionsToKill
+	DEALLOCATE sessionsToKill`
+
+	return c.Execute(cmd, sql.Named("username", username))
 }
