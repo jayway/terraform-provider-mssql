@@ -1,6 +1,6 @@
 # Terraform Provider for MSSQL
 
-This is an expermient during a competence day at Jayway STHLM.
+This is an experiment during a competence day at Jayway STHLM.
 
 Hopefully, it can evolve into a [Terraform](https://terraform.io) provider
 that lets you provision SQL Server and Database objects like users, logins,
